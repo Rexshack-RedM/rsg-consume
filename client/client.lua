@@ -1,161 +1,127 @@
 local config = require 'config'
----@type table
+lib.locale()
+
 local isBusy = false
----@type number
 local alcoholCount = 0
----@type boolean
-local effectActive = false
+local drunkActive = false
+local passingOut = false
+
+local fx = config.AlcoholEffects
+local alc = config.AlcoholSystem
 
 -- =========================================================================================
--- Helper Functions
+-- Helpers
 -- =========================================================================================
 
----Gets the player's ped.
----@return number
-local function getPed()
-    return cache.ped or PlayerPedId()
+local function notify(key, nType, duration)
+    lib.notify({
+        title = locale(key .. '_title'),
+        description = locale(key .. '_desc'),
+        type = nType,
+        duration = duration,
+        position = 'top-right',
+    })
 end
 
----Plays an animation on a ped.
----@param ped number The ped to play the animation on.
----@param dict string The animation dictionary.
----@param anim string The animation name.
----@param flag number|nil The animation flag. (Default: 1)
----@param duration number|nil The duration of the animation. (Default: -1 for infinite)
 local function playAnim(ped, dict, anim, flag, duration)
     lib.requestAnimDict(dict)
-    TaskPlayAnim(ped, dict, anim, 8.0, -8.0, duration or -1, flag or 1, 0, true, false, false)
+    TaskPlayAnim(ped, dict, anim, 8.0, -8.0, duration or -1, flag or 1, 0, false, false, false)
     RemoveAnimDict(dict)
 end
 
----Applies a post-process effect.
----@param effectName string The name of the effect to apply.
-local function applyEffect(effectName)
-    if effectName then AnimpostfxPlay(effectName) end
-end
-
----Stops a post-process effect.
----@param effectName string The name of the effect to stop.
-local function stopEffect(effectName)
-    if effectName then AnimpostfxStop(effectName) end
-end
-
----Sets the ped's drunk level for the wobbly walk style.
----@param ped number The ped to apply the effect to.
----@param level number The drunk effect level (0.0 to 1.0).
-local function setDrunkEffect(ped, level)
-    Citizen.InvokeNative(0x406CCF555B04FAD3, ped, 1, level)
-end
-
----Creates and attaches a prop to a ped's bone.
----@param ped number The ped to attach the prop to.
----@param propName string The name of the prop model.
----@param boneName string The name of the bone to attach to.
----@param x number X offset.
----@param y number Y offset.
----@param z number Z offset.
----@param rotX number X rotation.
----@param rotY number Y rotation.
----@param rotZ number Z rotation.
----@return number The created prop object.
-local function attachProp(ped, propName, boneName, x, y, z, rotX, rotY, rotZ)
+---Loads a model and creates a networked object at the ped.
+local function createProp(ped, model)
+    model = type(model) == 'string' and joaat(model) or model
+    lib.requestModel(model)
     local coords = GetEntityCoords(ped)
-    local prop = CreateObject(propName, coords.x, coords.y, coords.z, true, false, false)
-    AttachEntityToEntity(
-        prop, ped, GetEntityBoneIndexByName(ped, boneName),
-        x, y, z, rotX, rotY, rotZ,
-        true, true, false, true, 1, true
-    )
+    local obj = CreateObject(model, coords.x, coords.y, coords.z, true, true, false, false, true)
+    SetModelAsNoLongerNeeded(model)
+    return obj
+end
+
+local function attachProp(ped, model, bone, x, y, z, rx, ry, rz)
+    local prop = createProp(ped, model)
+    AttachEntityToEntity(prop, ped, GetEntityBoneIndexByName(ped, bone), x, y, z, rx, ry, rz, true, true, false, true, 1, true)
     return prop
 end
 
----Safely deletes an object, ensuring it exists first.
----@param obj number The object handle to delete.
 local function safeDelete(obj)
-    if DoesEntityExist(obj) then
+    if obj and DoesEntityExist(obj) then
         DetachEntity(obj, true, true)
         DeleteObject(obj)
     end
+end
+
+local function setDrunkLevel(ped, level)
+    Citizen.InvokeNative(0x406CCF555B04FAD3, ped, 1, level) -- _SET_PED_DRUNKNESS
+end
+
+local function clamp(v, lo, hi)
+    return math.max(lo, math.min(hi, v))
 end
 
 -- =========================================================================================
 -- Alcohol System
 -- =========================================================================================
 
----Handles the full pass-out sequence for the player.
----@param ped number The player ped.
+local function setDrunk(ped, state)
+    setDrunkLevel(ped, state and 0.95 or 0.0)
+    if state == drunkActive then return end
+    drunkActive = state
+
+    if fx.DrunkEffect then
+        if state then AnimpostfxPlay(fx.DrunkEffectName) else AnimpostfxStop(fx.DrunkEffectName) end
+    end
+    if state then notify('drunk', 'inform', 3000) else notify('sober', 'success', 2000) end
+end
+
 local function handlePassOut(ped)
-    lib.notify(config.AlcoholEffects.PassOutNotification)
+    passingOut = true
+    notify('passout', 'error', 5000)
 
-    playAnim(ped, 'amb_misc@world_human_vomit@male_a@idle_b', 'idle_f', 31, config.AlcoholEffects.VomitDuration)
+    playAnim(ped, 'amb_misc@world_human_vomit@male_a@idle_b', 'idle_f', 31, fx.VomitDuration)
+    Wait(fx.VomitDuration)
     ClearPedTasks(ped)
 
-    playAnim(ped, 'amb_rest@world_human_sleep_ground@arm@male_b@idle_b', 'idle_f', 1, config.AlcoholEffects.SleepDuration)
-
-    applyEffect(config.AlcoholEffects.PassOutEffect)
-    DoScreenFadeOut(config.AlcoholEffects.FadeOutDuration)
-    Wait(config.AlcoholEffects.FadeOutDuration)
+    playAnim(ped, 'amb_rest@world_human_sleep_ground@arm@male_b@idle_b', 'idle_f', 1, fx.SleepDuration)
+    AnimpostfxPlay(fx.PassOutEffect)
+    DoScreenFadeOut(fx.FadeOutDuration)
+    Wait(fx.FadeOutDuration)
+    AnimpostfxStop(fx.PassOutEffect)
 
     ClearPedTasks(ped)
-    Citizen.InvokeNative(0x58F7DB5BD8FA2288, ped)
+    Citizen.InvokeNative(0x58F7DB5BD8FA2288, ped) -- _CLEAR_PED_TASKS_EXTRA (wake up)
 
     alcoholCount = 0
-    applyEffect(config.AlcoholEffects.GroggyEffectName)
-    setDrunkEffect(ped, 0.95)
+    if drunkActive and fx.DrunkEffect then AnimpostfxStop(fx.DrunkEffectName) end
+    drunkActive = false
 
-    applyEffect(config.AlcoholEffects.WakeUpEffect)
-    DoScreenFadeIn(config.AlcoholEffects.FadeInDuration)
-    Wait(config.AlcoholEffects.FadeInDuration)
-    stopEffect(config.AlcoholEffects.WakeUpEffect)
-    lib.notify(config.AlcoholEffects.WakeUpNotification)
+    AnimpostfxPlay(fx.GroggyEffectName)
+    setDrunkLevel(ped, 0.95)
+    AnimpostfxPlay(fx.WakeUpEffect)
+    DoScreenFadeIn(fx.FadeInDuration)
+    Wait(fx.FadeInDuration)
+    AnimpostfxStop(fx.WakeUpEffect)
+    notify('wakeup', 'inform', 5000)
 
-    Wait(config.AlcoholEffects.GroggyDuration)
-    stopEffect(config.AlcoholEffects.GroggyEffectName)
-    setDrunkEffect(ped, 0.0)
-
-    if effectActive then
-        stopEffect(config.AlcoholEffects.DrunkEffectName)
-        effectActive = false
-    end
-
-    lib.notify(config.AlcoholEffects.SoberNotification)
-end
-
----Applies drunk effects to the ped.
----@param ped number The player ped.
-local function handleDrunk(ped)
-    setDrunkEffect(ped, 0.95)
-    if not effectActive then
-        applyEffect(config.AlcoholEffects.DrunkEffectName)
-        effectActive = true
-        lib.notify(config.AlcoholEffects.DrunkNotification)
-    end
-end
-
----Stops drunk effects and makes the ped sober.
----@param ped number The player ped.
-local function handleSober(ped)
-    setDrunkEffect(ped, 0.0)
-    if effectActive then
-        stopEffect(config.AlcoholEffects.DrunkEffectName)
-        effectActive = false
-        lib.notify(config.AlcoholEffects.SoberNotification)
-    end
+    Wait(fx.GroggyDuration)
+    AnimpostfxStop(fx.GroggyEffectName)
+    setDrunkLevel(ped, 0.0)
+    notify('sober', 'success', 2000)
+    passingOut = false
 end
 
 CreateThread(function()
     while true do
-        local ped = getPed()
         if alcoholCount > 0 then
-            Wait(config.AlcoholSystem.DecreaseInterval)
-            alcoholCount = math.max(0, alcoholCount - config.AlcoholSystem.DecreaseAmount)
+            Wait(alc.DecreaseInterval)
+            alcoholCount = math.max(0, alcoholCount - alc.DecreaseAmount)
+            local ped = cache.ped
 
-            if alcoholCount > config.AlcoholSystem.PassOutThreshold then
+            if alcoholCount > alc.PassOutThreshold then
                 handlePassOut(ped)
-            elseif alcoholCount > config.AlcoholSystem.DrunkThreshold then
-                handleDrunk(ped)
             else
-                handleSober(ped)
+                setDrunk(ped, alcoholCount > alc.DrunkThreshold)
             end
         else
             Wait(2000)
@@ -164,126 +130,106 @@ CreateThread(function()
 end)
 
 -- =========================================================================================
--- Generic Consumption Handler
+-- Consumption animations (return props + duration)
 -- =========================================================================================
 
----Handles the full consumption sequence for any item.
----@param itemName string The name of the item being consumed (key in config.Consumables).
----@param type "Eat"|"Drink"|"Stew"|"Hotdrinks"|"Eatcanned" The type of consumable.
-local function handleConsumption(itemName, type)
-    if isBusy or not config.Consumables[type][itemName] then return end
+local animations = {}
 
-    local ped = getPed()
-    local data = config.Consumables[type][itemName]
+function animations.Eat(ped, data)
+    local prop = attachProp(ped, data.propname, 'SKEL_L_Finger01', 0.04, -0.03, -0.01, 0.0, 19.0, 46.0)
+    playAnim(ped, 'mech_inventory@eating@multi_bite@sphere_d8-2_sandwich', 'quick_left_hand', 31, -1)
+    return 5000, prop
+end
 
-    isBusy = true
-    LocalPlayer.state:set("inv_busy", true, true)
-    SetCurrentPedWeapon(ped, `WEAPON_UNARMED`)
+function animations.Drink(ped, data)
+    local prop = attachProp(ped, data.propname, 'PH_R_HAND', 0.0, 0.0, 0.04, 0.0, 0.0, 0.0)
+    if not IsPedOnMount(ped) and not IsPedInAnyVehicle(ped, false) then
+        local dict = 'mech_inventory@drinking@bottle_cylinder_d1-3_h30-5_neck_a13_b2-5'
+        playAnim(ped, dict, 'uncork', 31, 500)
+        Wait(500)
+        playAnim(ped, dict, 'chug_a', 31, -1)
+        return 4500, prop
+    end
+    TaskItemInteraction_2(ped, 1737033966, prop, `p_bottleJD01x_ph_r_hand`, `DRINK_Bottle_Cylinder_d1-55_H18_Neck_A8_B1-8_QUICK_RIGHT_HAND`, true, 0, 0)
+    return 4000, prop
+end
 
-    local prop, prop2
-    local taskDuration = 4000
+-- Stew and Hotdrinks use fixed props: the item-interaction clips are bound to these models
+function animations.Stew(ped)
+    local bowl = createProp(ped, `p_bowl04x_stew`)
+    local spoon = createProp(ped, `p_spoon01x`)
+    Citizen.InvokeNative(0x669655FFB29EF1A9, bowl, 0, 'Stew_Fill', 1.0)
+    Citizen.InvokeNative(0xCAAF2BCCFEF37F77, bowl, 20)
+    Citizen.InvokeNative(0xCAAF2BCCFEF37F77, spoon, 82)
+    TaskItemInteraction_2(ped, 599184882, bowl, `p_bowl04x_stew_ph_l_hand`, -583731576, 1, 0, 0.0)
+    TaskItemInteraction_2(ped, 599184882, spoon, `p_spoon01x_ph_r_hand`, -583731576, 1, 0, 0.0)
+    Citizen.InvokeNative(0xB35370D5353995CB, ped, -583731576, 1.0)
+    return 5000, bowl, spoon
+end
 
-    if type == "Eat" then
-        prop = attachProp(ped, data.propname, "SKEL_L_Finger01", 0.04, -0.03, -0.01, 0.0, 19.0, 46.0)
-        playAnim(ped, 'mech_inventory@eating@multi_bite@sphere_d8-2_sandwich', 'quick_left_hand', 31, -1)
-        taskDuration = 5000
+function animations.Hotdrinks(ped)
+    local mug = createProp(ped, `P_MUGCOFFEE01X`)
+    Citizen.InvokeNative(0x669655FFB29EF1A9, mug, 0, 'CTRL_cupFill', 1.0)
+    TaskItemInteraction_2(ped, `CONSUMABLE_COFFEE`, mug, `P_MUGCOFFEE01X_PH_R_HAND`, `DRINK_COFFEE_HOLD`, 1, 0, -1)
+    return 5000, mug
+end
 
-    elseif type == "Drink" then
-        prop = attachProp(ped, data.propname, "PH_R_HAND", 0.0, 0.0, 0.04, 0.0, 0.0, 0.0)
-        if not IsPedOnMount(ped) and not IsPedInAnyVehicle(ped) then
-            playAnim(ped, 'mech_inventory@drinking@bottle_cylinder_d1-3_h30-5_neck_a13_b2-5', 'uncork', 31, 500)
-            playAnim(ped, 'mech_inventory@drinking@bottle_cylinder_d1-3_h30-5_neck_a13_b2-5', 'chug_a', 31, -1)
-            taskDuration = 5000
-        else
-            TaskItemInteraction_2(ped, 1737033966, prop, `p_bottleJD01x_ph_r_hand`, `DRINK_Bottle_Cylinder_d1-55_H18_Neck_A8_B1-8_QUICK_RIGHT_HAND`, true, 0, 0)
-            taskDuration = 4000
-        end
+function animations.Eatcanned(ped, data)
+    local prop = attachProp(ped, data.propname, 'SKEL_L_Finger00', 0.10, -0.03, 0.02, 20.0, -70.0, -20.0)
+    if not IsPedOnMount(ped) and not IsPedInAnyVehicle(ped, false) and not IsPedUsingAnyScenario(ped) then
+        playAnim(ped, 'mech_inventory@eating@canned_food@cylinder@d8-2_h10-5', 'left_hand', 31, -1)
+    else
+        TaskItemInteraction(ped, 0, `EAT_CANNED_FOOD_CYLINDER@D8-2_H10-5_QUICK_LEFT`, true, 0, 0)
+    end
+    return 2750, prop
+end
 
-    elseif type == "Stew" then
-        prop = CreateObject(`p_bowl04x_stew`, GetEntityCoords(ped), true, true, false, false, true)
-        prop2 = CreateObject(`p_spoon01x`, GetEntityCoords(ped), true, true, false, false, true)
-        Citizen.InvokeNative(0x669655FFB29EF1A9, prop, 0, "Stew_Fill", 1.0)
-        Citizen.InvokeNative(0xCAAF2BCCFEF37F77, prop, 20)
-        Citizen.InvokeNative(0xCAAF2BCCFEF37F77, prop2, 82)
-        TaskItemInteraction_2(ped, 599184882, prop, `p_bowl04x_stew_ph_l_hand`, -583731576, 1, 0, 0.0)
-        TaskItemInteraction_2(ped, 599184882, prop2, `p_spoon01x_ph_r_hand`, -583731576, 1, 0, 0.0)
-        Citizen.InvokeNative(0xB35370D5353995CB, ped, -583731576, 1.0)
-        taskDuration = 5000
+-- =========================================================================================
+-- Consumption handler (only triggered by the server after the item was removed)
+-- =========================================================================================
 
-    elseif type == "Hotdrinks" then
-        prop = CreateObject(`P_MUGCOFFEE01X`, GetEntityCoords(ped), true, true, false, false, true)
-        Citizen.InvokeNative(0x669655FFB29EF1A9, prop, 0, "CTRL_cupFill", 1.0)
-        TaskItemInteraction_2(ped, `CONSUMABLE_COFFEE`, prop, `P_MUGCOFFEE01X_PH_R_HAND`, `DRINK_COFFEE_HOLD`, 1, 0, -1)
-        taskDuration = 5000
-
-    elseif type == "Eatcanned" then
-        prop = attachProp(ped, data.propname, "SKEL_L_Finger00", 0.10, -0.03, 0.02, 20.0, -70.0, -20.0)
-        if not IsPedOnMount(ped) and not IsPedInAnyVehicle(ped) and not IsPedUsingAnyScenario(ped) then
-            playAnim(ped, 'mech_inventory@eating@canned_food@cylinder@d8-2_h10-5', 'left_hand', 31, -1)
-            taskDuration = 2750
-        else
-            TaskItemInteraction(ped, nil, `EAT_CANNED_FOOD_CYLINDER@D8-2_H10-5_QUICK_LEFT`, true, 0, 0)
-            taskDuration = 2750
+local function applyStats(data)
+    if data.alcohol then
+        alcoholCount = clamp(alcoholCount + data.alcohol, 0, alc.MaxAlcoholLevel)
+    end
+    if data.hunger and data.hunger ~= 0 then
+        TriggerEvent('hud:client:UpdateHunger', clamp((LocalPlayer.state.hunger or 0) + data.hunger, 0, 100))
+    end
+    if data.thirst and data.thirst ~= 0 then
+        TriggerEvent('hud:client:UpdateThirst', clamp((LocalPlayer.state.thirst or 0) + data.thirst, 0, 100))
+    end
+    if data.stress then
+        if data.stress > 0 then
+            TriggerEvent('hud:client:RelieveStress', data.stress)
+        elseif data.stress < 0 then
+            TriggerServerEvent('hud:server:GainStress', -data.stress)
         end
     end
+end
 
-    Wait(taskDuration)
+RegisterNetEvent('rsg-consume:client:consume', function(itemName, category)
+    if GetInvokingResource() then return end -- server-only trigger
+    local data = config.Consumables[category] and config.Consumables[category][itemName]
+    local anim = animations[category]
+    if not data or not anim or isBusy or passingOut then return end
+
+    local ped = cache.ped
+    if IsEntityDead(ped) then return end
+
+    isBusy = true
+    LocalPlayer.state:set('inv_busy', true, true)
+    SetCurrentPedWeapon(ped, `WEAPON_UNARMED`, true)
+
+    local ok, duration, prop, prop2 = pcall(anim, ped, data)
+    if ok then Wait(duration) end
+
     ClearPedTasks(ped)
     safeDelete(prop)
     safeDelete(prop2)
 
-    if data.alcohol then
-        if data.alcohol > 0 then
-            alcoholCount = math.min(config.AlcoholSystem.MaxAlcoholLevel, alcoholCount + data.alcohol)
-        else
-            alcoholCount = math.max(0, alcoholCount + data.alcohol)
-        end
-    end
-    TriggerServerEvent('rsg-consume:server:removeitem', data.item, 1)
-    if data.hunger then
-        TriggerEvent('hud:client:UpdateHunger', LocalPlayer.state.hunger + data.hunger)
-    end
-    if data.thirst then
-        TriggerEvent('hud:client:UpdateThirst', LocalPlayer.state.thirst + data.thirst)
-    end
-    if data.stress and data.stress > 0 then
-        TriggerEvent('hud:client:RelieveStress', data.stress)
-    end
+    applyStats(data)
     TriggerEvent('rsg-consume:client:onConsume', data)
-    LocalPlayer.state:set("inv_busy", false, true)
+
+    LocalPlayer.state:set('inv_busy', false, true)
     isBusy = false
-end
-
--- =========================================================================================
--- Event bindings
--- =========================================================================================
-
----Consumes a food item.
----@param itemName string The name of the food item.
-RegisterNetEvent('rsg-consume:client:eat', function(itemName)
-    handleConsumption(itemName, "Eat")
-end)
-
----Consumes a drink item.
----@param itemName string The name of the drink item.
-RegisterNetEvent('rsg-consume:client:drink', function(itemName)
-    handleConsumption(itemName, "Drink")
-end)
-
----Consumes a stew.
----@param itemName string The name of the stew item.
-RegisterNetEvent('rsg-consume:client:stew', function(itemName)
-    handleConsumption(itemName, "Stew")
-end)
-
----Consumes a hot drink (e.g., coffee).
----@param itemName string The name of the hot drink item.
-RegisterNetEvent('rsg-consume:client:drinkcoffee', function(itemName)
-    handleConsumption(itemName, "Hotdrinks")
-end)
-
----Consumes a canned food item.
----@param itemName string The name of the canned food item.
-RegisterNetEvent('rsg-consume:client:eatcanned', function(itemName)
-    handleConsumption(itemName, "Eatcanned")
 end)

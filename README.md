@@ -7,7 +7,7 @@
 ![License](https://img.shields.io/badge/license-GPL--3.0-green)
 
 > Immersive eating and drinking system for RedM servers built on RSG Core.  
-> Adds configurable hunger, thirst, alcohol, stress, and poison effects with synchronized animations and props.
+> Adds configurable hunger, thirst, alcohol and stress effects with synchronized animations and props.
 
 ---
 
@@ -16,7 +16,7 @@
 - [**ox_lib**](https://github.com/Rexshack-RedM/ox_lib) ⚙️ *(notifications, locales)*  
 - [**rsg-inventory**](https://github.com/Rexshack-RedM/rsg-inventory) 🎒 *(item use integration)*  
 
-**Locales:** `en`, `fr`, `es`, `el`, `pt-br`, `it`, `ro`  
+**Locales:** `en`, `de`, `el`, `es`, `fr`, `ja`, `nl`, `pl`, `pt-br`, `ro`  
 **License:** GPL‑3.0  
 
 ---
@@ -29,7 +29,7 @@
   - `Drink` → drinks (e.g., water, whiskey, coffee)
   - `Stew` → soups and stews (uses bowl animation)
 - Each item can modify multiple needs:
-  - Hunger, Thirst, Stress, Alcohol, Poison, PoisonRate
+  - Hunger, Thirst, Stress, Alcohol
 - Items automatically become **usable** via `RSGCore.Functions.CreateUseableItem()`.
 
 ### 🍺 Alcohol System
@@ -39,8 +39,7 @@
   - Drunken movement effects
 - Alcohol level decays over time (`Config.AlcoholDecayRate`).
 
-### ☠️ Poison & Stress
-- Poison gradually damages the player’s health over time.  
+### 😌 Stress
 - Certain foods/drinks can reduce stress.  
 
 ### 🎬 Immersive Animations
@@ -67,8 +66,6 @@ Consumables = {
             thirst = 0,
             stress = -5,
             alcohol = 0,
-            poison = 0,
-            poisonRate = 0,
             propname = "p_bread01x",
         },
     },
@@ -106,14 +103,11 @@ Consumables = {
 | `thirst` | How much thirst to restore |
 | `stress` | Stress modifier (negative reduces stress) |
 | `alcohol` | Adds alcohol level (higher = stronger drunk effect) |
-| `poison` | Initial poison level applied to player |
-| `poisonRate` | Rate at which poison damages player |
 | `propname` | Object used in animation (prop model name) |
 
 ### 🧮 System Settings (from config)
 ```lua
 Config.AlcoholDecayRate = 0.2  -- How quickly alcohol wears off
-Config.PoisonTickRate = 1.0    -- How often poison effect applies (seconds)
 Config.AnimDuration = 5000     -- Default consumption animation duration (ms)
 Config.Debug = false           -- Enable debug prints
 ```
@@ -147,7 +141,7 @@ coffee  = { name = 'coffee',  label = 'Cup of Coffee',      weight = 80,  type =
 ---
 
 ## 🌍 Locales
-Included: `en`, `fr`, `es`, `el`, `pt-br`, `it`, `ro`  
+Included: `en`, `de`, `el`, `es`, `fr`, `ja`, `nl`, `pl`, `pt-br`, `ro`  
 Loaded automatically with `lib.locale()`.
 
 ---

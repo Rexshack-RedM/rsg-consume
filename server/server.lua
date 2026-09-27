@@ -1,49 +1,57 @@
 -- =========================================================================================
--- Server-side event registration & item handling
+-- Server-side usable item registration & consumption
 -- =========================================================================================
 local config = require 'config'
----@type table
 local RSGCore = exports['rsg-core']:GetCoreObject()
+lib.locale()
 
----Registers usable items on the server based on the configuration.
----@param category string The category of consumables (e.g., "Eat", "Drink").
----@param clientEvent string The client-side event to trigger when the item is used.
-local function registerConsumables(category, clientEvent)
-    if not config.Consumables[category] then return end
+-- Must be at least as long as the longest client consume animation (5000 ms + margin)
+local USE_COOLDOWN = 6000
 
-    for itemName, _ in pairs(config.Consumables[category]) do
-        ---Registers a usable item.
-        ---@param source number The source ID of the player who used the item.
-        ---@param item table The item data.
-        RSGCore.Functions.CreateUseableItem(itemName, function(source, item)
-            TriggerClientEvent(clientEvent, source, item.name)
-        end)
+---@type table<number, number> src -> GetGameTimer() at which the player may consume again
+local busyUntil = {}
+
+---Registers every item in a category as usable. The item is removed server-side
+---BEFORE the client plays the animation, so the client never decides whether it is consumed.
+---@param category string Consumable category key in config.Consumables
+local function registerConsumables(category)
+    local items = config.Consumables[category]
+    if not items then return end
+
+    for itemName in pairs(items) do
+        if not RSGCore.Shared.Items[itemName] then
+            print(('^3[rsg-consume] Item "%s" (%s) is not in rsg-core shared items, skipping^7'):format(itemName, category))
+        else
+            RSGCore.Functions.CreateUseableItem(itemName, function(source, item)
+                local src = source
+                local Player = RSGCore.Functions.GetPlayer(src)
+                if not Player then return end
+
+                local now = GetGameTimer()
+                if (busyUntil[src] or 0) > now then
+                    TriggerClientEvent('ox_lib:notify', src, {
+                        title = locale('title_consume'),
+                        description = locale('busy'),
+                        type = 'error',
+                        duration = 3000,
+                    })
+                    return
+                end
+
+                if not Player.Functions.RemoveItem(itemName, 1, item and item.slot, 'rsg-consume') then return end
+
+                busyUntil[src] = now + USE_COOLDOWN
+                TriggerClientEvent('rsg-inventory:client:ItemBox', src, RSGCore.Shared.Items[itemName], 'remove', 1)
+                TriggerClientEvent('rsg-consume:client:consume', src, itemName, category)
+            end)
+        end
     end
 end
 
--- =========================================================================================
--- Registering Consumables
--- =========================================================================================
+for category in pairs(config.Consumables) do
+    registerConsumables(category)
+end
 
-registerConsumables("Eat",       'rsg-consume:client:eat')
-registerConsumables("Drink",     'rsg-consume:client:drink')
-registerConsumables("Hotdrinks", 'rsg-consume:client:drinkcoffee')
-registerConsumables("Stew",      'rsg-consume:client:stew')
-registerConsumables("Eatcanned", 'rsg-consume:client:eatcanned')
-
--- =========================================================================================
--- Server Events
--- =========================================================================================
-
----Removes a consumed item from the player's inventory.
----@param item string The name of the item to remove.
----@param amount number The number of items to remove.
-RegisterNetEvent('rsg-consume:server:removeitem', function(item, amount)
-    local src = source
-    local Player = RSGCore.Functions.GetPlayer(src)
-    if not Player or not item or not amount then return end
-
-    if Player.Functions.RemoveItem(item, amount) then
-        TriggerClientEvent('rsg-inventory:client:ItemBox', src, RSGCore.Shared.Items[item], 'remove', amount)
-    end
+AddEventHandler('playerDropped', function()
+    busyUntil[source] = nil
 end)
