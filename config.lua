@@ -9,6 +9,24 @@ return {
                 stress = 5,
                 propname = 'p_bread_14_ab_s_a',
             },
+            ['bread_sour'] = {
+                hunger = 40,
+                thirst = 0,
+                stress = 10,
+                propname = 'p_bread_14_ab_s_a',
+            },
+            ['cooked_meat'] = {
+                hunger = 30,
+                thirst = 5,
+                stress = 5,
+                propname = 'p_meatchunk_sm02x',
+            },
+            ['cooked_fish'] = {
+                hunger = 30,
+                thirst = 5,
+                stress = 5,
+                propname = 'p_meatchunk_sm02x',
+            },
         },
         Drink = { -- default drink items
             ['water'] = {
