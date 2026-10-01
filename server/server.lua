@@ -1,7 +1,7 @@
 -- =========================================================================================
 -- Server-side usable item registration & consumption
 -- =========================================================================================
-local config = require 'config'
+local config = require 'shared.config'
 local RSGCore = exports['rsg-core']:GetCoreObject()
 lib.locale()
 

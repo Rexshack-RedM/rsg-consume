@@ -1,4 +1,4 @@
-local config = require 'config'
+local config = require 'shared.config'
 lib.locale()
 
 local isBusy = false
@@ -164,7 +164,17 @@ function animations.Stew(ped)
     TaskItemInteraction_2(ped, 599184882, bowl, `p_bowl04x_stew_ph_l_hand`, -583731576, 1, 0, 0.0)
     TaskItemInteraction_2(ped, 599184882, spoon, `p_spoon01x_ph_r_hand`, -583731576, 1, 0, 0.0)
     Citizen.InvokeNative(0xB35370D5353995CB, ped, -583731576, 1.0)
-    return 5000, bowl, spoon
+
+    -- Wait for the interaction to actually finish instead of cutting it off at a fixed time.
+    -- 0x6AA3DCA2C6F5EB6D = _GET_ITEM_INTERACTION_STATE; -1318807663 = no active interaction.
+    Wait(500) -- give the task time to start
+    local timeout = GetGameTimer() + 15000
+    while GetGameTimer() < timeout do
+        local state = Citizen.InvokeNative(0x6AA3DCA2C6F5EB6D, ped)
+        if not state or state == 0 or state == -1318807663 or IsEntityDead(ped) then break end
+        Wait(250)
+    end
+    return 0, bowl, spoon
 end
 
 function animations.Hotdrinks(ped)
