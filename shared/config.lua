@@ -417,7 +417,7 @@ return {
                 stress = 5,
                 alcohol = -3,
                 propname = 's_canrigstrawberrie01x',
-            }
+            },
             ['canned_salmon'] = {
                 hunger = 10,
                 thirst = 10,
