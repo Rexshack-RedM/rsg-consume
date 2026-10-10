@@ -52,6 +52,21 @@ for category in pairs(config.Consumables) do
     registerConsumables(category)
 end
 
+-- Event triggered from the client after the consumption animation successfully completes
+RegisterNetEvent('rsg-consume:server:giveReturnItem', function(category, itemName)
+    local src = source
+    local Player = RSGCore.Functions.GetPlayer(src)
+    if not Player then return end
+
+    local itemConfig = config.Consumables[category] and config.Consumables[category][itemName]
+    if itemConfig and itemConfig.giveItem then
+        if RSGCore.Shared.Items[itemConfig.giveItem] then
+            Player.Functions.AddItem(itemConfig.giveItem, 1, false, { ['item_info'] = 'returned-from-consumption' })
+            TriggerClientEvent('rsg-inventory:client:ItemBox', src, RSGCore.Shared.Items[itemConfig.giveItem], 'add', 1)
+        end
+    end
+end)
+
 AddEventHandler('playerDropped', function()
     busyUntil[source] = nil
 end)

@@ -240,6 +240,9 @@ RegisterNetEvent('rsg-consume:client:consume', function(itemName, category)
     applyStats(data)
     TriggerEvent('rsg-consume:client:onConsume', data)
 
+    -- Trigger server to give back item (e.g. emptybottle) only after the animation finishes
+    TriggerServerEvent('rsg-consume:server:giveReturnItem', category, itemName)
+
     LocalPlayer.state:set('inv_busy', false, true)
     isBusy = false
 end)
