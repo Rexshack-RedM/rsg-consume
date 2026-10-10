@@ -103,13 +103,25 @@ return {
                 hunger = 15,
                 thirst = 5,
                 stress = 5,
-                propname = 's_bit_carrot01x',
+                propname = 'p_blackberry01x',
             },
             ['herb_black_berry'] = {
                 hunger = 15,
                 thirst = 5,
                 stress = 5,
-                propname = 's_bit_carrot01x',
+                propname = 'p_blackberry01x',
+            },
+            ['raspberry'] = {
+                hunger = 15,
+                thirst = 5,
+                stress = 5,
+                propname = 'p_blackberry01x',
+            },
+            ['herb_red_raspberry'] = {
+                hunger = 15,
+                thirst = 5,
+                stress = 5,
+                propname = 'p_blackberry01x',
             },
             ['orange'] = {
                 hunger = 15,
@@ -134,21 +146,21 @@ return {
                 thirst = 5,
                 stress = 25,
                 alcohol = -15,
-                propname = 'p_pie01x_slice',
+                propname = 'p_cornbread02x',
             },
                 ['pie_peach'] = {
                 hunger = 40,
                 thirst = 5,
                 stress = 25,
                 alcohol = -15,
-                propname = 'p_pie01x_slice',
+                propname = 'p_cornbread01x',
             },
                 ['pie_raspberry'] = {
                 hunger = 40,
                 thirst = 5,
                 stress = 25,
                 alcohol = -15,
-                propname = 'p_pie01x_slice',
+                propname = 'p_cornbread01x',
             },
         },
     ------------------------------------------
@@ -160,7 +172,7 @@ return {
                 thirst = 25,
                 stress = 5,
                 alcohol = -5,
-                propname = 'p_bottle03x',
+                propname = 'p_bottlebeer01a_1',
                 giveItem = 'emptybottle'
             },
                 ['milk'] = {
@@ -168,21 +180,21 @@ return {
                 thirst = 25,
                 stress = 5,
                 alcohol = -5,
-                propname = 'p_bottlebeer01a_1'
+                propname = 'p_bottlebeer01x'
             },
             ['glass_lemonmint'] = {
                 hunger = 0,
                 thirst = 25,
                 stress = 5,
                 alcohol = -5,
-                propname = 'p_glass01x'
+                propname = 'p_masonjar01x'
             },
             ['glass_lemonrasp'] = {
                 hunger = 0,
                 thirst = 25,
                 stress = 5,
                 alcohol = -5,
-                propname = 's_tumbler01x_clear'
+                propname = 'p_masonjar01x'
             },
             ['bottle_cola'] = {
                 hunger = 0,
@@ -227,21 +239,21 @@ return {
 				thirst = -10, --- hard liquor dehydrates you ---
 				stress = -20,
 				alcohol = 40,
-				propname = 'p_bucketstand02x'
+				propname = 's_champglass01x'
 			},
 			['glass_bourbon'] = {
 				hunger = -5, --- you'll wake up hungry and thirsty ---
 				thirst = -10, --- hard liquor dehydrates you ---
 				stress = -20,
 				alcohol = 35,
-				propname = 'p_glass07x'
+				propname = 's_tumbler02x_brown'
 			},
 			['glass_brandy'] = {
 				hunger = -5, --- you'll wake up hungry and thirsty ---
 				thirst = -10, --- hard liquor dehydrates you ---
 				stress = -20,
 				alcohol = 35,
-				propname = 's_tumbler02x_brown'
+				propname = 'p_glass03x'
 			},
 			['glass_champagne'] = {
 				hunger = -5, --- you'll wake up hungry and thirsty ---
@@ -255,49 +267,49 @@ return {
 				thirst = -10, --- hard liquor dehydrates you ---
 				stress = -20,
 				alcohol = 30,
-				propname = 'p_glass07x'
+				propname = 's_tumbler02x_brown'
 			},
 			['glass_martini'] = {
 				hunger = -5, --- you'll wake up hungry and thirsty ---
 				thirst = -10, --- hard liquor dehydrates you ---
 				stress = -20,
 				alcohol = 30,
-				propname = 'p_glass07x'
+				propname = 'mp001_p_glass003x_lqd'
 			},
 			['glass_mintjulip'] = {
 				hunger = -5, --- you'll wake up hungry and thirsty ---
 				thirst = -10, --- hard liquor dehydrates you ---
 				stress = -20,
 				alcohol = 30,
-				propname = 'p_glass07x'
+				propname = 's_champglass01x'
 			},
 			['glass_rum'] = {
 				hunger = -5, --- you'll wake up hungry and thirsty ---
 				thirst = -10, --- hard liquor dehydrates you ---
 				stress = -20,
 				alcohol = 30,
-				propname = 'p_whiskeyglass01x' 
+				propname = 's_tumbler02x_brown' 
 			},
 			['glass_tequila'] = {
 				hunger = -5, --- you'll wake up hungry and thirsty ---
 				thirst = -10, --- hard liquor dehydrates you ---
 				stress = -20,
 				alcohol = 30,
-				propname = 'p_cs_glass02x' 
+				propname = 's_tumbler02x_brown' 
 			},
 			['glass_vodka'] = {
 				hunger = -5, --- you'll wake up hungry and thirsty ---
 				thirst = -10, --- hard liquor dehydrates you ---
 				stress = -20,
 				alcohol = 30,
-				propname = 'p_glass01x' 
+				propname = 's_tumbler02x_brown' 
 			},
 			['glass_whisky'] = {
 				hunger = -5, --- you'll wake up hungry and thirsty ---
 				thirst = -10, --- hard liquor dehydrates you ---
 				stress = -20,
 				alcohol = 30,
-				propname = 'p_whiskeyglass01x' 
+				propname = 's_tumbler02x_brown' 
 			},
             ['glass_wine_red'] = {
 				hunger = -5, --- you'll wake up hungry and thirsty ---
@@ -409,21 +421,21 @@ return {
                 thirst = 10,
                 stress = 5,
                 alcohol = -3,
-                propname = 's_canrigstrawberrie01x',
+                propname = 's_canrigpineapple01x',
             },
             ['canned_pineapples'] = {
                 hunger = 10,
                 thirst = 10,
                 stress = 5,
                 alcohol = -3,
-                propname = 's_canrigstrawberrie01x',
+                propname = 'p_can08x',
             },
             ['canned_salmon'] = {
                 hunger = 10,
                 thirst = 10,
                 stress = 5,
                 alcohol = -3,
-                propname = 's_canrigstrawberrie01x',
+                propname = 'p_can10x',
             },
             ['canned_strawberries'] = {
                 hunger = 10,
