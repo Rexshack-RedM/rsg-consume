@@ -23,93 +23,62 @@
 
 ## ✨ Features
 
-### 🍴 Food, Drink & Stew
-- Configurable consumable categories:
-  - `Eat` → food items (e.g., bread, steak)
-  - `Drink` → drinks (e.g., water, whiskey, coffee)
-  - `Stew` → soups and stews (uses bowl animation)
-- Each item can modify multiple needs:
-  - Hunger, Thirst, Stress, Alcohol
-- Items automatically become **usable** via `RSGCore.Functions.CreateUseableItem()`.
+### 🍴 Consumable Categories
+| Category | Animation | Prop |
+|----------|-----------|------|
+| `Eat` | hand-held bite | `propname` per item |
+| `Drink` | uncork + chug (quick sip when mounted) | `propname` per item |
+| `Stew` | bowl + spoon interaction | fixed bowl & spoon |
+| `Hotdrinks` | mug hold & sip | fixed coffee mug |
+| `Eatcanned` | eat from can | `propname` per item |
+
+- Every item in `shared/config.lua` is registered as **usable** automatically (missing shared items are skipped with a console warning).
+- Each item can change **hunger**, **thirst**, **stress** and **alcohol**, and optionally return an item (`giveItem`, e.g. `emptybottle`).
 
 ### 🍺 Alcohol System
-- Each alcoholic item increases the player’s alcohol level.  
-- At high levels, players experience:
-  - Motion blur and camera shake
-  - Drunken movement effects
-- Alcohol level decays over time (`Config.AlcoholDecayRate`).
+- Alcoholic drinks raise an alcohol level; food and soft drinks can lower it (negative `alcohol`).
+- Above `DrunkThreshold` → drunk walk + screen effect.
+- Above `PassOutThreshold` → vomit, pass out, wake up with a hangover.
+- Level drops by `DecreaseAmount` every `DecreaseInterval` ms.
 
-### 😌 Stress
-- Certain foods/drinks can reduce stress.  
-
-### 🎬 Immersive Animations
-Each consumption type has its own prop and animation:
-| Type | Animation | Example Prop |
-|------|------------|--------------|
-| Eat | “eat_food” | bread, meat |
-| Drink | “drink_bottle” | bottle, mug |
-| Stew | “eat_stew” | bowl |
-| HotDrink | “drink_cup” | coffee cup |
-
-Animations sync between client and nearby players for full immersion.
+### 🔒 Security
+- Items are removed **server-side** before the animation plays.
+- Return items are only given once per real consumption (one-time server token) — the return event can't be spammed.
+- If the client can't play the consume (already busy, passed out, dead) the item is refunded instead of lost.
 
 ---
 
-## ⚙️ Configuration (`config.lua`)
-
-Example structure:
+## ⚙️ Configuration (`shared/config.lua`)
 ```lua
 Consumables = {
-    Eat = {
-        bread = {
-            hunger = 30,
-            thirst = 0,
-            stress = -5,
-            alcohol = 0,
-            propname = "p_bread01x",
-        },
-    },
     Drink = {
-        water = {
-            hunger = 0,
-            thirst = 35,
-            stress = -2,
-            alcohol = 0,
-            propname = "p_bottle02x",
-        },
-        whiskey = {
-            hunger = 0,
-            thirst = 10,
-            stress = -10,
-            alcohol = 25,
-            propname = "p_bottleWhiskey01x",
+        ['water'] = {
+            hunger = 0,     -- added to hunger (0-100), can be negative
+            thirst = 25,    -- added to thirst (0-100), can be negative
+            stress = 5,     -- positive relieves stress, negative adds stress
+            alcohol = -5,   -- positive gets you drunk, negative sobers you up
+            propname = 'p_bottlebeer01a_1',
+            giveItem = 'emptybottle', -- optional item returned after drinking
         },
     },
-    Stew = {
-        stew = {
-            hunger = 50,
-            thirst = 10,
-            stress = -10,
-            propname = "p_bowl04x",
-        },
-    },
-}
+},
+
+AlcoholSystem = {
+    DrunkThreshold = 50,
+    PassOutThreshold = 200,
+    DecreaseAmount = 1,
+    DecreaseInterval = 5000,
+    MaxAlcoholLevel = 500,
+},
 ```
+`AlcoholEffects` controls the post-fx names and the vomit / sleep / fade / hangover timings.
 
-### 🔧 Key Configuration Fields
-| Key | Description |
-|------|-------------|
-| `hunger` | How much hunger to restore |
-| `thirst` | How much thirst to restore |
-| `stress` | Stress modifier (negative reduces stress) |
-| `alcohol` | Adds alcohol level (higher = stronger drunk effect) |
-| `propname` | Object used in animation (prop model name) |
-
-### 🧮 System Settings (from config)
+### 🔌 Integration
+Other resources can react to consumption on the client:
 ```lua
-Config.AlcoholDecayRate = 0.2  -- How quickly alcohol wears off
-Config.AnimDuration = 5000     -- Default consumption animation duration (ms)
-Config.Debug = false           -- Enable debug prints
+AddEventHandler('rsg-consume:client:onConsume', function(data)
+    -- data = the item's config entry (hunger, thirst, stress, alcohol, ...)
+end)
 ```
 
 ---
@@ -152,3 +121,8 @@ Loaded automatically with `lib.locale()`.
 - Alcohol system logic added by **Suu** → [github.com/suu-yoshida](https://github.com/suu-yoshida)  
 - Community testers and translators  
 - License: GPL‑3.0  
+
+---
+
+## ☕ Support
+If you enjoy this script, you can support development here: [buymeacoffee.com/rexshack](https://buymeacoffee.com/rexshack)

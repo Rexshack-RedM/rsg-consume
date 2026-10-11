@@ -65,9 +65,9 @@ end
 -- =========================================================================================
 
 local function setDrunk(ped, state)
-    setDrunkLevel(ped, state and 0.95 or 0.0)
     if state == drunkActive then return end
     drunkActive = state
+    setDrunkLevel(ped, state and 0.95 or 0.0)
 
     if fx.DrunkEffect then
         if state then AnimpostfxPlay(fx.DrunkEffectName) else AnimpostfxStop(fx.DrunkEffectName) end
@@ -221,10 +221,13 @@ RegisterNetEvent('rsg-consume:client:consume', function(itemName, category)
     if GetInvokingResource() then return end -- server-only trigger
     local data = config.Consumables[category] and config.Consumables[category][itemName]
     local anim = animations[category]
-    if not data or not anim or isBusy or passingOut then return end
-
     local ped = cache.ped
-    if IsEntityDead(ped) then return end
+
+    -- Server already removed the item: if we can't play it, tell the server to refund it
+    if not data or not anim or isBusy or passingOut or IsEntityDead(ped) then
+        TriggerServerEvent('rsg-consume:server:finish', false)
+        return
+    end
 
     isBusy = true
     LocalPlayer.state:set('inv_busy', true, true)
@@ -240,8 +243,8 @@ RegisterNetEvent('rsg-consume:client:consume', function(itemName, category)
     applyStats(data)
     TriggerEvent('rsg-consume:client:onConsume', data)
 
-    -- Trigger server to give back item (e.g. emptybottle) only after the animation finishes
-    TriggerServerEvent('rsg-consume:server:giveReturnItem', category, itemName)
+    -- Releases the server lock and gives back any return item (e.g. emptybottle)
+    TriggerServerEvent('rsg-consume:server:finish', true)
 
     LocalPlayer.state:set('inv_busy', false, true)
     isBusy = false
