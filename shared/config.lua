@@ -319,6 +319,90 @@ return {
 				alcohol = 30,
 				propname = 'p_glass03x'
 			},
+            ['moonshine'] = {
+				hunger = -5, --- you'll wake up hungry and thirsty ---
+				thirst = -10, --- hard liquor dehydrates you ---
+				stress = -20,
+				alcohol = 25,
+				propname = 'p_masonjarmoonshine01x'
+			},
+            ['moonshine_apple'] = {
+				hunger = -5, --- you'll wake up hungry and thirsty ---
+				thirst = -10, --- hard liquor dehydrates you ---
+				stress = -20,
+				alcohol = 25,
+				propname = 'p_masonjarmoonshine01x'
+			},
+            ['moonshine_blackberry'] = {
+				hunger = -5, --- you'll wake up hungry and thirsty ---
+				thirst = -10, --- hard liquor dehydrates you ---
+				stress = -20,
+				alcohol = 30,
+				propname = 'p_masonjarmoonshine01x'
+			},
+            ['moonshine_raspberry'] = {
+				hunger = -5, --- you'll wake up hungry and thirsty ---
+				thirst = -10, --- hard liquor dehydrates you ---
+				stress = -20,
+				alcohol = 30,
+				propname = 'p_masonjarmoonshine01x'
+			},
+            ['moonshine_peach'] = {
+				hunger = -5, --- you'll wake up hungry and thirsty ---
+				thirst = -10, --- hard liquor dehydrates you ---
+				stress = -20,
+				alcohol = 30,
+				propname = 'p_masonjarmoonshine01x'
+			},
+            ['moonshine_plumb'] = {
+				hunger = -5, --- you'll wake up hungry and thirsty ---
+				thirst = -10, --- hard liquor dehydrates you ---
+				stress = -20,
+				alcohol = 35,
+				propname = 'p_masonjarmoonshine01x'
+			},
+            ['moonshine_wildcider'] = {
+				hunger = -5, --- you'll wake up hungry and thirsty ---
+				thirst = -10, --- hard liquor dehydrates you ---
+				stress = -20,
+				alcohol = 35,
+				propname = 'p_masonjarmoonshine01x'
+			},
+            ['moonshine_currant'] = {
+				hunger = -5, --- you'll wake up hungry and thirsty ---
+				thirst = -10, --- hard liquor dehydrates you ---
+				stress = -20,
+				alcohol = 35,
+				propname = 'p_masonjarmoonshine01x'
+			},
+            ['moonshine_applepie'] = {
+				hunger = -5, --- you'll wake up hungry and thirsty ---
+				thirst = -10, --- hard liquor dehydrates you ---
+				stress = -20,
+				alcohol = 40,
+				propname = 'p_masonjarmoonshine01x'
+			},
+            ['moonshine_orange'] = {
+				hunger = -5, --- you'll wake up hungry and thirsty ---
+				thirst = -10, --- hard liquor dehydrates you ---
+				stress = -20,
+				alcohol = 40,
+				propname = 'p_masonjarmoonshine01x'
+			},
+            ['moonshine_alaskan'] = {
+				hunger = -5, --- you'll wake up hungry and thirsty ---
+				thirst = -10, --- hard liquor dehydrates you ---
+				stress = -20,
+				alcohol = 50,
+				propname = 'p_masonjarmoonshine01x'
+			},
+            ['moonshine_american'] = {
+				hunger = -5, --- you'll wake up hungry and thirsty ---
+				thirst = -10, --- hard liquor dehydrates you ---
+				stress = -20,
+				alcohol = 60,
+				propname = 'p_masonjarmoonshine01x'
+			},
         },
     ------------------------------------------
 	-- meals (stew)
