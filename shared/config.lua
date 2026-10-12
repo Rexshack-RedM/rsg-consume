@@ -105,25 +105,19 @@ return {
                 stress = 5,
                 propname = 'p_blackberry01x',
             },
-            ['herb_black_berry'] = {
-                hunger = 15,
-                thirst = 5,
-                stress = 5,
-                propname = 'p_blackberry01x',
-            },
             ['raspberry'] = {
                 hunger = 15,
                 thirst = 5,
                 stress = 5,
                 propname = 'p_blackberry01x',
             },
-            ['herb_red_raspberry'] = {
+            ['orange'] = {
                 hunger = 15,
                 thirst = 5,
                 stress = 5,
-                propname = 'p_blackberry01x',
+                propname = 's_bit_peach01x',
             },
-            ['orange'] = {
+            ['peach'] = {
                 hunger = 15,
                 thirst = 5,
                 stress = 5,
