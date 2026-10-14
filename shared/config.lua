@@ -124,6 +124,99 @@ return {
                 propname = 's_bit_peach01x',
             },
     ------------------------------------------
+	-- candy
+    ------------------------------------------
+            ['candy_chocolates'] = {
+                hunger = 30,
+                thirst = 0,
+                stress = 30,
+                propname = 'p_cs_candy01x',
+            },
+            ['candy_lemondrops'] = {
+                hunger = 30,
+                thirst = 0,
+                stress = 30,
+                propname = 'p_cs_candy01x',
+            },
+            ['candy_licorice_blk'] = {
+                hunger = 30,
+                thirst = 0,
+                stress = 30,
+                propname = 'p_cs_candy01x',
+            },
+            ['candy_licorice_red'] = {
+                hunger = 30,
+                thirst = 0,
+                stress = 30,
+                propname = 'p_cs_candy01x',
+            },
+            ['candy_lollipop'] = {
+                hunger = 30,
+                thirst = 0,
+                stress = 30,
+                propname = 'p_cs_candy01x',
+            },
+            ['candy_peanuts'] = {
+                hunger = 30,
+                thirst = 0,
+                stress = 20,
+                propname = 'p_cs_candy01x',
+            },
+            ['candy_popcorn'] = {
+                hunger = 30,
+                thirst = 0,
+                stress = 20,
+                propname = 'p_cs_candy01x',
+            },
+            ['candy_popcorn_carm'] = {
+                hunger = 30,
+                thirst = 0,
+                stress = 30,
+                propname = 'p_cs_candy01x',
+            },
+            ['candy_swtaffy'] = {
+                hunger = 30,
+                thirst = 0,
+                stress = 30,
+                propname = 'p_cs_candy01x',
+            },
+            ['candyapple'] = {
+                hunger = 30,
+                thirst = 0,
+                stress = 30,
+                propname = 'p_cs_candy01x',
+            },
+            ['candyapple_carm'] = {
+                hunger = 30,
+                thirst = 0,
+                stress = 30,
+                propname = 'p_cs_candy01x',
+            },
+            ['candyrock_blue'] = {
+                hunger = 30,
+                thirst = 0,
+                stress = 30,
+                propname = 'p_cs_candy01x',
+            },
+            ['candyrock_red'] = {
+                hunger = 30,
+                thirst = 0,
+                stress = 30,
+                propname = 'p_cs_candy01x',
+            },
+            ['candystick_blue'] = {
+                hunger = 30,
+                thirst = 0,
+                stress = 30,
+                propname = 'p_cs_candy01x',
+            },
+            ['candystick_orange'] = {
+                hunger = 30,
+                thirst = 0,
+                stress = 30,
+                propname = 'p_cs_candy01x',
+            },
+    ------------------------------------------
 	-- raw vegtables
     ------------------------------------------
             ['carrot'] = {
