@@ -8,5 +8,6 @@
     "wakeup_title": "🤕 Rough Awakening",
     "wakeup_desc": "You wake up with a terrible headache...",
     "sober_title": "✨ Recovered",
-    "sober_desc": "You feel clear-headed again."
+    "sober_desc": "You feel clear-headed again.",
+    "inventory_full": "Your pockets are full"
 }

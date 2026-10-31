@@ -12,8 +12,7 @@
 ---
 
 ## 🛠️ Dependencies
-- [**rsg-core**](https://github.com/Rexshack-RedM/rsg-core) 🤠  
-- [**ox_lib**](https://github.com/Rexshack-RedM/ox_lib) ⚙️ *(notifications, locales)*  
+- [**rsg-core**](https://github.com/Rexshack-RedM/rsg-core) 🤠 *(notifications, locales)*  
 - [**rsg-inventory**](https://github.com/Rexshack-RedM/rsg-inventory) 🎒 *(item use integration)*  
 
 **Locales:** `en`, `de`, `el`, `es`, `fr`, `ja`, `nl`, `pl`, `pt-br`, `ro`  
@@ -45,6 +44,8 @@
 - Items are removed **server-side** before the animation plays.
 - Return items are only given once per real consumption (one-time server token) — the return event can't be spammed.
 - If the client can't play the consume (already busy, passed out, dead) the item is refunded instead of lost.
+- Return/refund items check inventory space first; a stuck consume auto-unlocks after 30s.
+- Props, screen effects and the inventory lock are cleaned up if the resource stops mid-use.
 
 ---
 
@@ -97,10 +98,9 @@ coffee  = { name = 'coffee',  label = 'Cup of Coffee',      weight = 80,  type =
 
 ## 📂 Installation
 1. Place `rsg-consume` inside your `resources/[rsg]` folder.  
-2. Ensure `rsg-core`, `rsg-inventory`, and `ox_lib` are installed.  
+2. Ensure `rsg-core` and `rsg-inventory` are installed (no ox_lib needed).  
 3. Add to your `server.cfg`:
    ```cfg
-   ensure ox_lib
    ensure rsg-core
    ensure rsg-inventory
    ensure rsg-consume
@@ -111,7 +111,7 @@ coffee  = { name = 'coffee',  label = 'Cup of Coffee',      weight = 80,  type =
 
 ## 🌍 Locales
 Included: `en`, `de`, `el`, `es`, `fr`, `ja`, `nl`, `pl`, `pt-br`, `ro`  
-Loaded automatically with `lib.locale()`.
+Loaded automatically by rsg-core. Set the language with `setr rsg:locale de` in `server.cfg`.
 
 ---
 

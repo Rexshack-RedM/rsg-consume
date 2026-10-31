@@ -1,4 +1,4 @@
-return {
+Config = {
 
     -- stress: positive relieves stress, negative adds stress | hunger/thirst: added to current value (0-100)
     Consumables = {

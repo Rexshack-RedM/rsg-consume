@@ -1,10 +1,11 @@
-local config = require 'shared.config'
-lib.locale()
+local RSGCore = exports['rsg-core']:GetCoreObject()
+local config = Config
 
 local isBusy = false
 local alcoholCount = 0
 local drunkActive = false
 local passingOut = false
+local activeProps = {}
 
 local fx = config.AlcoholEffects
 local alc = config.AlcoholSystem
@@ -14,7 +15,7 @@ local alc = config.AlcoholSystem
 -- =========================================================================================
 
 local function notify(key, nType, duration)
-    lib.notify({
+    RSGCore.Functions.Notify({
         title = locale(key .. '_title'),
         description = locale(key .. '_desc'),
         type = nType,
@@ -23,8 +24,19 @@ local function notify(key, nType, duration)
     })
 end
 
+local function loadAsset(hasLoaded, request, asset)
+    if hasLoaded(asset) then return true end
+    request(asset)
+    local timeout = GetGameTimer() + 5000
+    while not hasLoaded(asset) do
+        if GetGameTimer() > timeout then return false end
+        Wait(10)
+    end
+    return true
+end
+
 local function playAnim(ped, dict, anim, flag, duration)
-    lib.requestAnimDict(dict)
+    if not loadAsset(HasAnimDictLoaded, RequestAnimDict, dict) then return end
     TaskPlayAnim(ped, dict, anim, 8.0, -8.0, duration or -1, flag or 1, 0, false, false, false)
     RemoveAnimDict(dict)
 end
@@ -32,15 +44,17 @@ end
 ---Loads a model and creates a networked object at the ped.
 local function createProp(ped, model)
     model = type(model) == 'string' and joaat(model) or model
-    lib.requestModel(model)
+    if not IsModelValid(model) or not loadAsset(HasModelLoaded, RequestModel, model) then return end
     local coords = GetEntityCoords(ped)
     local obj = CreateObject(model, coords.x, coords.y, coords.z, true, true, false, false, true)
     SetModelAsNoLongerNeeded(model)
+    activeProps[#activeProps + 1] = obj
     return obj
 end
 
 local function attachProp(ped, model, bone, x, y, z, rx, ry, rz)
     local prop = createProp(ped, model)
+    if not prop then return end
     AttachEntityToEntity(prop, ped, GetEntityBoneIndexByName(ped, bone), x, y, z, rx, ry, rz, true, true, false, true, 1, true)
     return prop
 end
@@ -116,7 +130,7 @@ CreateThread(function()
         if alcoholCount > 0 then
             Wait(alc.DecreaseInterval)
             alcoholCount = math.max(0, alcoholCount - alc.DecreaseAmount)
-            local ped = cache.ped
+            local ped = PlayerPedId()
 
             if alcoholCount > alc.PassOutThreshold then
                 handlePassOut(ped)
@@ -221,7 +235,7 @@ RegisterNetEvent('rsg-consume:client:consume', function(itemName, category)
     if GetInvokingResource() then return end -- server-only trigger
     local data = config.Consumables[category] and config.Consumables[category][itemName]
     local anim = animations[category]
-    local ped = cache.ped
+    local ped = PlayerPedId()
 
     -- Server already removed the item: if we can't play it, tell the server to refund it
     if not data or not anim or isBusy or passingOut or IsEntityDead(ped) then
@@ -234,11 +248,16 @@ RegisterNetEvent('rsg-consume:client:consume', function(itemName, category)
     SetCurrentPedWeapon(ped, `WEAPON_UNARMED`, true)
 
     local ok, duration, prop, prop2 = pcall(anim, ped, data)
-    if ok then Wait(duration) end
+    if ok then
+        Wait(duration)
+    else
+        print(('^1[rsg-consume] animation error (%s/%s): %s^7'):format(category, itemName, duration))
+    end
 
     ClearPedTasks(ped)
     safeDelete(prop)
     safeDelete(prop2)
+    activeProps = {}
 
     applyStats(data)
     TriggerEvent('rsg-consume:client:onConsume', data)
@@ -248,4 +267,24 @@ RegisterNetEvent('rsg-consume:client:consume', function(itemName, category)
 
     LocalPlayer.state:set('inv_busy', false, true)
     isBusy = false
+end)
+
+-- =========================================================================================
+-- Cleanup
+-- =========================================================================================
+
+AddEventHandler('onResourceStop', function(resource)
+    if resource ~= GetCurrentResourceName() then return end
+    local ped = PlayerPedId()
+    for _, obj in ipairs(activeProps) do safeDelete(obj) end
+    if isBusy then
+        ClearPedTasks(ped)
+        LocalPlayer.state:set('inv_busy', false, true)
+    end
+    AnimpostfxStop(fx.DrunkEffectName)
+    AnimpostfxStop(fx.PassOutEffect)
+    AnimpostfxStop(fx.WakeUpEffect)
+    AnimpostfxStop(fx.GroggyEffectName)
+    setDrunkLevel(ped, 0.0)
+    if IsScreenFadedOut() or IsScreenFadingOut() then DoScreenFadeIn(500) end
 end)

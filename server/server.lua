@@ -1,9 +1,8 @@
 -- =========================================================================================
 -- Server-side usable item registration & consumption
 -- =========================================================================================
-local config = require 'shared.config'
 local RSGCore = exports['rsg-core']:GetCoreObject()
-lib.locale()
+local config = Config
 
 -- Safety net: if the client never reports back (crash, desync) the lock is released after this
 local CONSUME_TIMEOUT = 30000
@@ -14,7 +13,7 @@ local CONSUME_TIMEOUT = 30000
 local pending = {}
 
 local function notifyBusy(src)
-    TriggerClientEvent('ox_lib:notify', src, {
+    TriggerClientEvent('RSGCore:Client:Notify', src, {
         title = locale('title_consume'),
         description = locale('busy'),
         type = 'error',
@@ -22,11 +21,19 @@ local function notifyBusy(src)
     })
 end
 
+-- rsg-inventory AddItem/RemoveItem show the ItemBox themselves
 local function addItem(src, itemName, reason)
     if not RSGCore.Shared.Items[itemName] then return end
-    if exports['rsg-inventory']:AddItem(src, itemName, 1, nil, nil, reason) then
-        TriggerClientEvent('rsg-inventory:client:ItemBox', src, RSGCore.Shared.Items[itemName], 'add', 1)
+    if not exports['rsg-inventory']:CanAddItem(src, itemName, 1) then
+        TriggerClientEvent('RSGCore:Client:Notify', src, {
+            title = locale('title_consume'),
+            description = locale('inventory_full'),
+            type = 'error',
+            duration = 3000,
+        })
+        return
     end
+    exports['rsg-inventory']:AddItem(src, itemName, 1, nil, nil, reason)
 end
 
 ---Registers every item in a category as usable. The item is removed server-side
@@ -48,7 +55,6 @@ local function registerConsumables(category, items)
                 if not exports['rsg-inventory']:RemoveItem(src, itemName, 1, item and item.slot, 'rsg-consume') then return end
 
                 pending[src] = { item = itemName, category = category, expires = GetGameTimer() + CONSUME_TIMEOUT }
-                TriggerClientEvent('rsg-inventory:client:ItemBox', src, RSGCore.Shared.Items[itemName], 'remove', 1)
                 TriggerClientEvent('rsg-consume:client:consume', src, itemName, category)
             end)
         end
@@ -70,7 +76,7 @@ RegisterNetEvent('rsg-consume:server:finish', function(consumed)
 
     if not RSGCore.Functions.GetPlayer(src) then return end
 
-    if consumed then
+    if consumed == true then
         local data = config.Consumables[active.category][active.item]
         if data.giveItem then addItem(src, data.giveItem, 'rsg-consume-return') end
     else
